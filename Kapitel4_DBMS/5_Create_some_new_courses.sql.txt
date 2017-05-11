@@ -1,0 +1,73 @@
+--1. Make a procedure that creates a new course; send all necessary information as arguments to the procedure.
+SELECT * FROM Courses;
+go
+--drop procedure PSetNewCourse;
+go
+create procedure PSetNewCourse
+    @code char(6),
+    @name char(100),
+    @points decimal(3,1),
+    @description char(100)
+as
+begin
+INSERT INTO Courses VALUES (@code,@name,@points, @description);
+end;
+go
+exec PSetNewCourse @code='DV1454',@name='Database technique',@points=7.5,@description='Databases Introduction'
+go
+SELECT * FROM Courses;
+
+--2. Create a procedure that copies a CourseBudget (including all CourseBudgetElements) and saves it as a new row in
+-- CourseBudget (and new rows in CourseBudgetElements). Create procedure arguments as needed. 
+-- Tip: INSERT...SELECT to copy many existing rows).
+
+--drop procedure PCopyCourseBudget;
+go
+create procedure PCopyCourseBudget
+@id INT
+as
+begin
+declare @idCourse as INT;
+declare @idDepartment as INT;
+declare @yearCourseBudget as INT;
+declare @periodCourseBudget as INT;
+declare @locationCourseBudget as CHAR(3);
+declare @languageCourseBudget as CHAR(2);
+declare @numStudentsCourse as INT;
+
+set @idCourse=(select CourseBudget_idCourse from CourseBudget where idCourseBudget=@id);
+set @idDepartment=(select CourseBudget_idDepartment from CourseBudget where idCourseBudget=@id);
+set @yearCourseBudget=(select budgetYearCourseBudget from CourseBudget where idCourseBudget=@id);
+set @periodCourseBudget=(select studyPeriodCourseBudget from CourseBudget where idCourseBudget=@id);
+set @locationCourseBudget=(select locationCourseBudget from CourseBudget where idCourseBudget=@id);
+set @languageCourseBudget=(select languageCourseBudget from CourseBudget where idCourseBudget=@id);
+set @numStudentsCourse=(select numStudentsCourseBudget from CourseBudget where idCourseBudget=@id);
+INSERT INTO CourseBudget VALUES (@idCourse,@idDepartment,@yearCourseBudget,@periodCourseBudget,@locationCourseBudget,@languageCourseBudget,@numStudentsCourse);
+end;
+go
+select * from CourseBudget;
+exec PCopyCourseBudget @id=1;
+select * from CourseBudget;
+
+--3.  Make a procedure that makes it easy to add new CourseBudgetElements to an existing CourseBudget. Parameters should be:
+--id of course budget,
+--acronym of teacher,
+--name of nameCourseElementTypes
+--number of hours.
+--drop procedure PAddCourseBudgetElements;
+go
+create procedure PAddCourseBudgetElements
+   @courseBudgetId integer,
+   @acronym CHAR(3),
+   @courseName CHAR(2),
+   @hours integer
+as
+begin
+INSERT INTO CourseBudgetElements VALUES (@courseBudgetId, @courseName, @acronym, @hours);
+end;
+go
+select * from CourseBudgetElements;
+select * from CourseBudget;
+exec PAddCourseBudgetElements @courseBudgetId=5,@acronym='MOL', @courseName='SE',@hours=15;
+select * from CourseBudgetElements;
+select * from CourseBudget;

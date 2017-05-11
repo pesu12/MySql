@@ -1,0 +1,38 @@
+--1. Create a view (VTeacherAge) that contains the calculated value of a teachers age.
+--drop view VTeacherAge;
+go
+create view VTeacherAge as select namePersonnel, DATEDIFF(year,cast(birthdatePersonnel as date),cast(getdate() as date)) AS age from Personnel;
+go
+select * from VTeacherAge;
+
+--2. Create a function (FCalculateServiceHours()) that returns the amount of teaching that a teacher should do,
+--based on his/her age and their service grade - (fulltime or parttime?).
+--Use the age and service grade (fulltime or parttime teacher) as arguments to the function. Use the view VTeacherAge.
+--DROP FUNCTION FCalculateServiceHours
+GO
+create function FCalculateServiceHours (@servicegradePersonnel integer, @age integer) 
+returns int
+begin
+DECLARE @result int;
+  if (@age<30) set @result=1756 * @servicegradePersonnel/100;
+  if (@age>=30 and @age<=40) set @result=1730 * @servicegradePersonnel/100;
+  if (@age>40) set @result=1700 * @servicegradePersonnel/100;
+  return @result;
+end
+go
+SELECT distinct(Personnel.namePersonnel),dv1454_ht14_d_7.FCalculateServiceHours(servicegradePersonnel,age) AS ServiceGrade FROM VTeacherAge, Personnel;
+
+--4.Create a view (VTeacherWork) that shows all details about teacher, including the age and the amount of supposed hours to work.
+--drop view VTeacherWork;
+go
+create view VTeacherWork as select distinct(Personnel.namePersonnel) as Name,akronymPersonnel as Akronym,dv1454_ht14_d_7.FCalculateServiceHours(servicegradePersonnel,age) AS SupposedWorkHours,salaryPerHourPersonnal as SalaryPerHour,age,Department.nameDepartment as Department from Personnel,Department,VTeacherAge where Personnel.Personnel_idDepartment=Department.idDepartment and Personnel.namePersonnel=VTeacherAge.namePersonnel;
+go
+select * from VTeacherWork;
+
+--5.How much teaching can this University provide for 2008? (work hours 2008)
+--drop view courses2008;
+go
+create view courses2008 as select CourseBudgetElements_idCourseBudget as courses from CourseBudgetElements,CourseBudget where CourseBudget.idCourseBudget=CourseBudgetElements.CourseBudgetElements_idCourseBudget and CourseBudget.budgetYearCourseBudget=2008;
+go
+select sum(hoursCourseBudgetElements) as TotalTeachingHours2008 from CourseBudgetElements,courses;
+

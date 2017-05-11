@@ -1,0 +1,21 @@
+--2. Look Around
+--How many teachers are there?
+select count(*) as NumberOfTeachers from Personnel;
+
+--At what department are they working?
+select Personnel.namePersonnel,Department.nameDepartment from Personnel,Department where Personnel.Personnel_idDepartment=Department.idDepartment;
+
+--When are the teachers born, order by birth-date?
+select namePersonnel, cast(birthdatePersonnel as date) as BirthDate from Personnel order by birthdatePersonnel;
+
+--Which are the courses the University can provide?
+select nameCourse from Courses;
+
+--What are the course code of the courses scheduled to take place (courses that have a course budget)?
+select distinct(Courses.kodCourse)from Courses,CourseBudget where Courses.idCourse=CourseBudget.CourseBudget_idCourse; 
+
+--What are the types of course elements that exist and what are their factors?
+select nameCourseElementTypes,factorCourseElementtypes from CourseElementTypes;
+
+--Calculate the age of a teacher.
+select namePersonnel, DATEDIFF(year,cast(birthdatePersonnel as date),cast(getdate() as date)) AS AgeInYears from Personnel where namePersonnel='Anders Nilssson';

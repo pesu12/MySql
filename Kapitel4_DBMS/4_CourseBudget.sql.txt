@@ -1,0 +1,102 @@
+--4.2 Create view VCourseBudget
+--1. Create view (VCourseBudget),
+--drop view VCourseBudget;
+go
+create view VCourseBudget as select
+CourseBudget.idCourseBudget,
+CourseElementTypes.nameCourseElementTypes as Moment,
+CourseElementTypes.descriptionCourseElementTypes as Type,
+CourseBudgetElements.CourseBudgetElements_akronymPersonnel as Vem,
+CourseBudgetElements.hoursCourseBudgetElements as Timmom,
+CourseElementTypes.factorCourseElementtypes as Factor
+from CourseElementTypes,CourseBudgetElements,CourseBudget where
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and
+CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget;
+go
+select * from VCourseBudget;
+
+--2. Create function (FCalcLatu)
+--DROP FUNCTION FCalcLatu
+GO
+create function FCalcLatu (@tim_mom float, @factor_of_course_element_type float) 
+returns float
+begin
+DECLARE @result float;
+  set @result= @tim_mom * @factor_of_course_element_type;
+  return @result;
+end
+go
+SELECT dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,factorCourseElementtypes) AS Lätusum FROM CourseBudgetElements,CourseElementTypes where
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes;
+--3. Update the view (ALTER VIEW) (VCourseBudget) to use the function (FCalcLatu).
+go
+ALTER VIEW VCourseBudget
+as select CourseBudget.idCourseBudget,CourseElementTypes.nameCourseElementTypes as Moment, CourseElementTypes.descriptionCourseElementTypes,CourseBudgetElements.CourseBudgetElements_akronymPersonnel,CourseBudgetElements.hoursCourseBudgetElements,CourseElementTypes.factorCourseElementtypes as Factor,dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,factorCourseElementtypes) as Lätusum from CourseElementTypes,CourseBudgetElements,CourseBudget where CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget;
+go
+select * from VCourseBudget;
+--4.3 Special case of calculating Lätu_sum
+--1. Add the number_of_students as argument to the function (FCalcLatu). 
+
+--Lätu_sum = tim_mom * factor_of_course_element_type * number_of_students * 0.9;
+DROP FUNCTION FCalcLatu
+GO
+create function FCalcLatu (@tim_mom float, @factor_of_course_element_type float,@number_of_students integer) 
+returns float
+begin
+DECLARE @Lätu_sum float;
+  set @Lätu_sum = @tim_mom * @factor_of_course_element_type * @number_of_students * 0.9;
+  return @Lätu_sum;
+end
+go
+SELECT dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,factorCourseElementtypes,numStudentsCourseBudget) AS Lätusum FROM CourseBudgetElements,CourseElementTypes,CourseBudget
+where
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and
+CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget;
+go
+--2. Update the view (ALTER VIEW) (VCourseBudget) to use this improved version of the function.
+ALTER VIEW VCourseBudget 
+as select CourseBudget.idCourseBudget,CourseElementTypes.nameCourseElementTypes as Moment,
+CourseElementTypes.descriptionCourseElementTypes,
+CourseBudgetElements.CourseBudgetElements_akronymPersonnel,
+CourseBudgetElements.hoursCourseBudgetElements,
+CourseElementTypes.factorCourseElementtypes as Factor,
+dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,
+factorCourseElementtypes,numStudentsCourseBudget) as Lätusum from CourseElementTypes,
+CourseBudgetElements,CourseBudget where
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and
+CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget;
+go
+select * from VCourseBudget;
+--4.4 Use view to answer some questions
+--1. How much LÄTU (Lätu_sum) does all the coursebudgets for 2008 sum up to?
+select sum(dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,factorCourseElementtypes,numStudentsCourseBudget)) as Lätusum from 
+CourseBudgetElements,CourseElementTypes,CourseBudget where 
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and
+CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget and
+CourseBudget.budgetYearCourseBudget=2008;
+
+
+--2. Which course is currently the most expensive one?
+select top 1 nameCourse,dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,factorCourseElementtypes,numStudentsCourseBudget) as MostExpensive from
+CourseBudgetElements,CourseElementTypes,CourseBudget,Courses
+where
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and
+CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget and
+CourseBudget.CourseBudget_idCourse = Courses.idCourse order by MostExpensive desc;
+
+select idCourse,nameCourse from Courses;
+
+--3. The union negotiates new factors (factor_of_course_element_type) for correcting the exam, the factor is now 3. Update apropriate column in the correct table.
+select * from CourseElementTypes;
+go
+update CourseElementTypes set factorCourseElementtypes=4 where descriptionCourseElementTypes='Correct exam';
+go
+select * from CourseElementTypes;
+
+--4. Recheck which course is the most expensive one. Did it change?
+select top 1 nameCourse,dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,factorCourseElementtypes,numStudentsCourseBudget) as MostExpensive from
+CourseBudgetElements,CourseElementTypes,CourseBudget,Courses
+where
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and
+CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget and
+CourseBudget.CourseBudget_idCourse = Courses.idCourse order by MostExpensive desc;

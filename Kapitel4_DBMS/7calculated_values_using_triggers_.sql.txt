@@ -1,0 +1,66 @@
+--You decide that its to hard/time consuming to calculate the total amount of scheduled LÄTU hours 
+--(sum of all Lätu_sum) each time you need them so you decide to make a table containing a single column with total LÄTU hours for this University.
+
+--1. Add the table and enter the value by calculating it by hand.
+--drop table TotalSchedLÄTUhours;
+CREATE TABLE TotalSchedLÄTUhours(
+scheduledlätuhours int
+    PRIMARY KEY (scheduledlätuhours)
+);
+insert into TotalSchedLÄTUhours values(25164);
+
+select * from TotalSchedLÄTUhours;
+
+--2. Create a trigger that keeps this table updated when a course budget elements change.
+--drop trigger TUpdateBudgetCourseElement_TotalSchedLÄTUhours
+go
+create trigger TUpdateBudgetCourseElement_TotalSchedLÄTUhours
+on CourseBudgetElements after update
+as
+begin
+update TotalSchedLÄTUhours set scheduledlätuhours=
+(select sum(dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,factorCourseElementtypes,numStudentsCourseBudget)) as Lätusum from 
+CourseBudgetElements,CourseElementTypes,CourseBudget where 
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and
+CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget);
+end;
+go
+select * from TotalSchedLÄTUhours;
+select * from CourseBudgetElements;
+update CourseBudgetElements set hoursCourseBudgetElements = 2 where idCourseBudgetElements=23;
+select * from TotalSchedLÄTUhours;
+select * from CourseBudgetElements;
+--------------------------------------------------------------------------------------------------------
+
+--You decide that its to hard/time consuming to calculate the total amount of scheduled LÄTU hours 
+--(sum of all Lätu_sum) each time you need them so you decide to make a table containing a single column with total LÄTU hours for this University.
+
+--1. Add the table and enter the value by calculating it by hand.
+--drop table TotalSchedLÄTUhours;
+CREATE TABLE TotalSchedLÄTUhours(
+scheduledlätuhours int
+    PRIMARY KEY (scheduledlätuhours)
+);
+insert into TotalSchedLÄTUhours values(25164);
+
+select * from TotalSchedLÄTUhours;
+
+--2. Create a trigger that keeps this table updated when a course budget elements change.
+--drop trigger TUpdateBudgetCourseElement_TotalSchedLÄTUhours
+go
+create trigger TUpdateBudgetCourseElement_TotalSchedLÄTUhours
+on CourseBudgetElements after update
+as
+begin
+update TotalSchedLÄTUhours set scheduledlätuhours=
+(select sum(dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,factorCourseElementtypes,numStudentsCourseBudget)) as Lätusum from 
+CourseBudgetElements,CourseElementTypes,CourseBudget where 
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and
+CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget);
+end;
+go
+select * from TotalSchedLÄTUhours;
+select * from CourseBudgetElements;
+update CourseBudgetElements set hoursCourseBudgetElements = 2 where idCourseBudgetElements=23;
+select * from TotalSchedLÄTUhours;
+select * from CourseBudgetElements;

@@ -1,0 +1,70 @@
+--1. When adding a CourseBudgetElements of the type TR (Correct written exam), then use the number
+--   of students as a value for the column hoursCourseBudgetElements.
+
+--hoursCourseBudgetElements last 1
+--drop trigger TInsertBudgetElements
+go
+create trigger TInsertBudgetElements
+on CourseBudgetElements after insert
+as
+begin
+declare @numOfStudents int;
+declare @lastidCourseBudgetElements int;
+set @lastidCourseBudgetElements=(select max(idCourseBudgetElements) from CourseBudgetElements);
+set @numOfStudents=(
+   select numStudentsCourseBudget from CourseBudget where idCourseBudget=(
+      select CourseBudgetElements_idCourseBudget from CourseBudgetElements where idCourseBudgetElements=(
+	    select max(idCourseBudgetElements) from CourseBudgetElements
+	    )
+    )
+);
+update CourseBudgetElements set hoursCourseBudgetElements=@numOfStudents where idCourseBudgetElements=(@lastidCourseBudgetElements);
+end;
+go
+select * from CourseBudgetElements;
+INSERT INTO CourseBudgetElements VALUES (1, 'TR', 'MOS', 1);
+select * from CourseBudgetElements;
+
+--2. When inserting a new course budget, then also add an entry for course responsible in the table 
+--   CourseBudgetElements. Add the entry using dummy values (for example, akonym = MOS and hours = 5).
+--   If you need to update your existing tables to make this easier (for example default values), 
+--   then do that using ALTER TABLE.
+--drop trigger TInsertCourseBudget
+go
+create trigger TInsertCourseBudget
+on CourseBudget after insert
+as
+begin
+declare @idCourseBud int;
+set @idCourseBud=(select CourseBudget_idCourse from CourseBudget where idCourseBudget=(
+	    select max(idCourseBudget) from CourseBudget
+	    )
+    )
+INSERT INTO CourseBudgetElements VALUES (@idCourseBud, 'TR', 'MOS', 5);
+end;
+go
+select * from CourseBudgetElements;
+select * from CourseBudget;
+INSERT INTO CourseBudget VALUES (1, 1, 2008, 1, 'Rby', 'Sv', 30);
+select * from CourseBudgetElements;
+select * from CourseBudget;
+
+--3. When deleting a course budget, then delete all its occurrences in CourseBudgetElements. 
+--   If this fails, then find out why it fails and figure out a way to correct it.
+--drop trigger TDeleteCourseBudget
+go
+create trigger TDeleteCourseBudget
+on CourseBudget instead of delete
+as
+begin
+declare @idCourseBudget int
+set @idCourseBudget=(select idCourseBudget from CourseBudget where idCourseBudget=2);
+DELETE FROM CourseBudgetElements where CourseBudgetElements_idCourseBudget=@idCourseBudget;
+DELETE FROM CourseBudget where idCourseBudget=@idCourseBudget;
+end;
+go
+select * from CourseBudgetElements;
+select * from CourseBudget;
+DELETE FROM CourseBudget where idCourseBudget=2;
+select * from CourseBudgetElements;
+select * from CourseBudget;

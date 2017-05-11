@@ -1,0 +1,74 @@
+--Management of the University needs the following reports. Use views, functions, procedures and equal tools that you have learnt.
+
+
+--1. Show all courses budgets and calculate the total Lätu_sum for each course budget. Order by Lätu_sum, which is the most expensive course?
+--DROP FUNCTION FCalcLatu_work_hours
+
+--****************************************************************************
+--I DID THIS EXTRA FCalcLatu_hours to be able to compare teachers workhours with planned hours.
+--****************************************************************************
+--drop function FCalcLatu_work_hours
+GO
+create function FCalcLatu_work_hours (@tim_mom float, @factor_of_course_element_type float) 
+returns float
+begin
+DECLARE @result float;
+  set @result= @tim_mom * @factor_of_course_element_type;
+  return @result;
+end
+go
+SELECT dv1454_ht14_d_7.FCalcLatu_work_hours(hoursCourseBudgetElements,factorCourseElementtypes) AS Lätusum FROM CourseBudgetElements,CourseElementTypes where
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes;
+select CourseBudget.idCourseBudget,CourseElementTypes.nameCourseElementTypes as Moment,
+CourseElementTypes.descriptionCourseElementTypes,
+CourseBudgetElements.CourseBudgetElements_akronymPersonnel,
+CourseBudgetElements.hoursCourseBudgetElements,
+CourseElementTypes.factorCourseElementtypes as Factor,
+dv1454_ht14_d_7.FCalcLatu(hoursCourseBudgetElements,factorCourseElementtypes,numStudentsCourseBudget) as Lätusum,
+nameCourse as CourseName
+from CourseElementTypes,CourseBudgetElements,CourseBudget, Courses 
+where CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes
+and CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget 
+and CourseBudget.CourseBudget_idCourse =Courses.idCourse order by Lätusum desc;
+
+--2. Show all teachers and calculate the currently planned Lätu_sum for each teacher. Create this as a view (VTeacherPlanned).
+
+--drop view VTeacherPlanned;
+go
+create view VTeacherPlanned as select 
+namePersonnel as Name, sum(dv1454_ht14_d_7.FCalcLatu_work_hours(hoursCourseBudgetElements,factorCourseElementtypes)) as Lätusum from 
+CourseBudgetElements,CourseElementTypes,CourseBudget,Personnel where 
+CourseBudgetElements.CourseBudgetElements_nameCourseElementTypes = CourseElementTypes.nameCourseElementTypes and
+CourseBudgetElements.CourseBudgetElements_idCourseBudget=CourseBudget.idCourseBudget and
+Personnel.akronymPersonnel=CourseBudgetElements.CourseBudgetElements_akronymPersonnel
+group by Personnel.namePersonnel;
+go
+select * from VTeacherPlanned;
+
+--3. Provide a list showing the available hours for teaching. How much shall each teacher work? Reuse your view VTeacherWork, it already has the answer.
+--drop view VTeacherWork;
+go
+create view VTeacherWork as select distinct(Personnel.namePersonnel) as Name,
+dv1454_ht14_d_7.FCalculateServiceHours(servicegradePersonnel,age) AS SupposedWorkHours from Personnel,
+Department,
+VTeacherAge where 
+Personnel.Personnel_idDepartment=Department.idDepartment and
+Personnel.namePersonnel=VTeacherAge.namePersonnel;
+go
+select * from VTeacherWork;
+
+--4. Combine the two views (VTeacherPlanned, VTeacherWork) to show if the teacher is working overtime/undertime. 
+--   Provide a report saying how much a teacher is supposed to work and how much he is planned to work. 
+--   Include the calculated value of the teachers overtime/undertime.
+select VTeacherPlanned.Name,VTeacherWork.SupposedWorkHours,VTeacherPlanned.Lätusum,VTeacherPlanned.Lätusum-VTeacherWork.SupposedWorkHours as OvertimeHours_plus_undertime_minus from VTeacherPlanned,VTeacherWork where 
+VTeacherPlanned.Name=VTeacherWork.Name;
+
+--5. The union renegotiates the factor (factor_of_course_element_type) of the CourseElementType "Lecture" to be a factor of 25.
+--   Update your database to reflect this. Recheck the report for overtime, did it change?
+select * from CourseElementTypes;
+update CourseElementTypes set factorCourseElementtypes=25 where nameCourseElementTypes='LE';
+select * from CourseElementTypes;
+
+select VTeacherPlanned.Name,VTeacherWork.SupposedWorkHours,VTeacherPlanned.Lätusum,VTeacherPlanned.Lätusum-VTeacherWork.SupposedWorkHours as OvertimeHours_plus_undertime_minus from VTeacherPlanned,VTeacherWork where 
+VTeacherPlanned.Name=VTeacherWork.Name;
+ 
